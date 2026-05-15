@@ -15,11 +15,11 @@ func runStatic(args []string) error {
 
 	var sandbox string
 	var excludeMitigations bool
-	var flawID string
+	var flawID int
 
 	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name")
 	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation annotation details")
-	fs.StringVar(&flawID, "flaw-id", "", "Issue ID of a specific flaw to retrieve static call-stack details")
+	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve static call-stack details")
 
 	common, err := parseCommon(fs, args)
 	if err != nil {
@@ -28,7 +28,7 @@ func runStatic(args []string) error {
 		return nil
 	}
 
-	if flawID != "" {
+	if flawID > 0 {
 		sandboxCopy := sandbox // capture for closure
 		return executeDetail(common.app, common.workspaceRoot, func(ctx context.Context, c *api.Client, appGUID, appName string) (any, error) {
 			return c.GetStaticFlawDetail(ctx, appGUID, appName, flawID, sandboxCopy)
