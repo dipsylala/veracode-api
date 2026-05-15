@@ -1,0 +1,13 @@
+# Binaries (root-level built outputs only)
+/veracode-api
+/veracode-api.exe
+dist/
+
+# Go build cache
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
