@@ -38,6 +38,17 @@ func runSCA(args []string) error {
 		}
 	})
 
+	if severityGteSet && (severityGte < 0 || severityGte > 5) {
+		fmt.Fprintf(os.Stderr, "veracode-api sca: --severity-gte must be between 0 and 5\n")
+		printFlagDefaults(fs)
+		return nil
+	}
+	if cvssGteSet && (cvssGte < 0.0 || cvssGte > 10.0) {
+		fmt.Fprintf(os.Stderr, "veracode-api sca: --cvss-gte must be between 0.0 and 10.0\n")
+		printFlagDefaults(fs)
+		return nil
+	}
+
 	p := buildParams(common, "SCA")
 	p.OnlyExploitable = onlyExploitable
 	p.OnlyNew = onlyNew

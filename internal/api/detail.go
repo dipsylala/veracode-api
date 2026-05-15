@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -124,8 +123,8 @@ type AttackVectorOutput struct {
 // ---------------------------------------------------------------------------
 
 // GetStaticFlawDetail fetches the data-path call stack for a SAST finding.
-func (c *Client) GetStaticFlawDetail(ctx context.Context, appGUID, appName, issueID, sandbox string) (*StaticDetailOutput, error) {
-	path := fmt.Sprintf("/appsec/v2/applications/%s/findings/%s/static_flaw_info", appGUID, issueID)
+func (c *Client) GetStaticFlawDetail(ctx context.Context, appGUID, appName string, issueID int, sandbox string) (*StaticDetailOutput, error) {
+	path := fmt.Sprintf("/appsec/v2/applications/%s/findings/%d/static_flaw_info", appGUID, issueID)
 	params := url.Values{}
 	if sandbox != "" {
 		params.Set("context", sandbox)
@@ -141,15 +140,11 @@ func (c *Client) GetStaticFlawDetail(ctx context.Context, appGUID, appName, issu
 		return nil, fmt.Errorf("parse static_flaw_info response: %w", err)
 	}
 
-	flawID, err := strconv.Atoi(issueID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid flaw ID %q: %w", issueID, err)
-	}
 	out := &StaticDetailOutput{
 		Success: true,
 		App:     appName,
 		Domain:  "static",
-		FlawID:  flawID,
+		FlawID:  issueID,
 	}
 
 	for i, dp := range raw.DataPaths {
@@ -181,8 +176,8 @@ func (c *Client) GetStaticFlawDetail(ctx context.Context, appGUID, appName, issu
 }
 
 // GetDynamicFlawDetail fetches HTTP request/response details for a DAST finding.
-func (c *Client) GetDynamicFlawDetail(ctx context.Context, appGUID, appName, issueID string) (*DynamicDetailOutput, error) {
-	path := fmt.Sprintf("/appsec/v2/applications/%s/findings/%s/dynamic_flaw_info", appGUID, issueID)
+func (c *Client) GetDynamicFlawDetail(ctx context.Context, appGUID, appName string, issueID int) (*DynamicDetailOutput, error) {
+	path := fmt.Sprintf("/appsec/v2/applications/%s/findings/%d/dynamic_flaw_info", appGUID, issueID)
 
 	body, err := c.get(ctx, path, url.Values{})
 	if err != nil {
@@ -194,15 +189,11 @@ func (c *Client) GetDynamicFlawDetail(ctx context.Context, appGUID, appName, iss
 		return nil, fmt.Errorf("parse dynamic_flaw_info response: %w", err)
 	}
 
-	flawID, err := strconv.Atoi(issueID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid flaw ID %q: %w", issueID, err)
-	}
 	out := &DynamicDetailOutput{
 		Success:        true,
 		App:            appName,
 		Domain:         "dynamic",
-		FlawID:         flawID,
+		FlawID:         issueID,
 		CWEID:          raw.IssueSummary.CWEID,
 		Description:    raw.IssueSummary.Description,
 		Recommendation: raw.IssueSummary.Recommendation,
