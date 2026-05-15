@@ -48,6 +48,16 @@ func parseCommon(fs *flag.FlagSet, args []string) (commonFlags, error) {
 			f.severitySet = true
 		}
 	})
+
+	if f.severitySet && (f.severity < 0 || f.severity > 5) {
+		return f, fmt.Errorf("--severity must be between 0 and 5")
+	}
+	if f.page < 0 {
+		return f, fmt.Errorf("--page must be >= 0")
+	}
+	if f.size <= 0 {
+		return f, fmt.Errorf("--size must be > 0")
+	}
 	return f, nil
 }
 

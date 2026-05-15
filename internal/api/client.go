@@ -224,7 +224,7 @@ type rawFinding struct {
 
 // OutputFinding is the clean per-finding structure written to stdout.
 type OutputFinding struct {
-	IssueID        int     `json:"issue_id"`
+	IssueID        int     `json:"issue_id,omitempty"`
 	ScanType       string  `json:"scan_type"`
 	Severity       int     `json:"severity"`
 	CWEID          int     `json:"cwe_id,omitempty"`
