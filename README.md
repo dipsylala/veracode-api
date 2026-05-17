@@ -62,11 +62,12 @@ veracode-api <domain> [flags]
 | `static`    | SAST findings from the latest policy scan |
 | `dynamic`   | DAST findings from the latest policy scan |
 | `sca`       | SCA component vulnerability findings |
+| `appinfo`   | Application profile details |
 | `apps`      | List application profiles |
 | `sandboxes` | List sandboxes for an application |
 | `scaninfo`  | Scan/build metadata for an application |
 
-### Application flags (`static`, `dynamic`, `sca`, `sandboxes`, `scaninfo`)
+### Application flags (`static`, `dynamic`, `sca`, `appinfo`, `sandboxes`, `scaninfo`)
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -148,6 +149,9 @@ veracode-api apps
 
 # List the first 25 application profiles
 veracode-api apps --size 25
+
+# Get application profile details
+veracode-api appinfo --app "Verademo"
 
 # List sandboxes for an application
 veracode-api sandboxes --app "MyApp"
@@ -251,6 +255,33 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
       "name": "MyApp"
     }
   ]
+}
+```
+
+**Application info** (`appinfo`):
+```json
+{
+  "success": true,
+  "app": "Verademo",
+  "guid": "22222222-2222-2222-2222-222222222222",
+  "id": 1234567,
+  "name": "Verademo",
+  "application": {
+    "guid": "22222222-2222-2222-2222-222222222222",
+    "id": 1234567,
+    "created": "2024-01-15T14:57:35.000Z",
+    "last_completed_scan_date": "2024-02-20T09:20:53.000Z",
+    "profile": {
+      "name": "Verademo",
+      "business_criticality": "VERY_HIGH"
+    },
+    "scans": [
+      {
+        "scan_type": "STATIC",
+        "status": "PUBLISHED"
+      }
+    ]
+  }
 }
 ```
 

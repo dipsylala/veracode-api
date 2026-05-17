@@ -140,6 +140,16 @@ type ApplicationListOutput struct {
 	Applications      []ApplicationSummary `json:"applications"`
 }
 
+// ApplicationDetailOutput is the JSON written to stdout for an appinfo query.
+type ApplicationDetailOutput struct {
+	Success     bool           `json:"success"`
+	App         string         `json:"app"`
+	GUID        string         `json:"guid"`
+	ID          int            `json:"id"`
+	Name        string         `json:"name"`
+	Application map[string]any `json:"application"`
+}
+
 // SandboxInfo holds the identifiers for a Veracode sandbox.
 type SandboxInfo struct {
 	GUID string `json:"guid"`
@@ -171,7 +181,10 @@ type sandboxListResponse struct {
 
 // GetAppInfo resolves an application name to its GUID and numeric ID.
 func (c *Client) GetAppInfo(ctx context.Context, name string) (AppInfo, error) {
-	body, err := c.get(ctx, "/appsec/v1/applications", url.Values{"name": {name}})
+	body, err := c.get(ctx, "/appsec/v1/applications", url.Values{
+		"name": {name},
+		"size": {"500"},
+	})
 	if err != nil {
 		return AppInfo{}, fmt.Errorf("application lookup: %w", err)
 	}
@@ -183,13 +196,20 @@ func (c *Client) GetAppInfo(ctx context.Context, name string) (AppInfo, error) {
 	if len(apps) == 0 {
 		return AppInfo{}, fmt.Errorf("application not found: %s", name)
 	}
+	available := make([]string, 0, len(apps))
 	for _, a := range apps {
-		if strings.EqualFold(a.Profile.Name, name) {
-			return AppInfo{GUID: a.GUID, ID: a.ID, Name: a.Profile.Name}, nil
+		appName := strings.TrimSpace(a.Profile.Name)
+		if appName != "" {
+			available = append(available, appName)
+		}
+		if strings.EqualFold(appName, strings.TrimSpace(name)) {
+			return AppInfo{GUID: a.GUID, ID: a.ID, Name: appName}, nil
 		}
 	}
-	a := apps[0]
-	return AppInfo{GUID: a.GUID, ID: a.ID, Name: a.Profile.Name}, nil
+	if len(available) > 0 {
+		return AppInfo{}, fmt.Errorf("application not found with exact name %q (matched: %s)", name, strings.Join(available, ", "))
+	}
+	return AppInfo{}, fmt.Errorf("application not found with exact name %q", name)
 }
 
 // GetAppGUID resolves an application name to its GUID.
@@ -232,6 +252,44 @@ func (c *Client) GetApplications(ctx context.Context, page, size int) (*Applicat
 		Page:              resp.Page.Number,
 		Size:              resp.Page.Size,
 		Applications:      applications,
+	}, nil
+}
+
+// GetApplicationDetails returns the full application profile details for an app.
+func (c *Client) GetApplicationDetails(ctx context.Context, appGUID, appName string) (*ApplicationDetailOutput, error) {
+	body, err := c.get(ctx, fmt.Sprintf("/appsec/v1/applications/%s", appGUID), nil)
+	if err != nil {
+		return nil, fmt.Errorf("application details: %w", err)
+	}
+
+	var raw map[string]any
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, fmt.Errorf("parse application details response: %w", err)
+	}
+
+	var summary struct {
+		GUID    string `json:"guid"`
+		ID      int    `json:"id"`
+		Profile struct {
+			Name string `json:"name"`
+		} `json:"profile"`
+	}
+	if err := json.Unmarshal(body, &summary); err != nil {
+		return nil, fmt.Errorf("parse application details summary: %w", err)
+	}
+
+	name := summary.Profile.Name
+	if name == "" {
+		name = appName
+	}
+
+	return &ApplicationDetailOutput{
+		Success:     true,
+		App:         appName,
+		GUID:        summary.GUID,
+		ID:          summary.ID,
+		Name:        name,
+		Application: raw,
 	}, nil
 }
 
