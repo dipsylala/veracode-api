@@ -127,7 +127,11 @@ func (c *Client) GetStaticFlawDetail(ctx context.Context, appGUID, appName strin
 	path := fmt.Sprintf("/appsec/v2/applications/%s/findings/%d/static_flaw_info", appGUID, issueID)
 	params := url.Values{}
 	if sandbox != "" {
-		params.Set("context", sandbox)
+		sandboxGUID, err := c.ResolveSandboxGUID(ctx, appGUID, sandbox)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("context", sandboxGUID)
 	}
 
 	body, err := c.get(ctx, path, params)
