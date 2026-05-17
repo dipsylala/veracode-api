@@ -2,6 +2,27 @@
 
 A single-binary CLI for querying Veracode platform findings and metadata (SAST, DAST, SCA, applications, sandboxes, scan info) via the Veracode REST and XML APIs. No runtime dependencies — just build and run.
 
+## Quick Start
+
+Create `~/.veracode/veracode.yml` with your Veracode API credentials:
+
+```yaml
+api:
+  key-id: "your-api-id"
+  key-secret: "your-api-key"
+```
+
+You can also use environment variables; see [Authentication](#authentication).
+
+List applications, inspect one application, and fetch scan data:
+
+```bash
+veracode-api apps
+veracode-api appinfo --app "Verademo"
+veracode-api static --app "Verademo" --violates-policy
+veracode-api scaninfo --app "Verademo"
+```
+
 ## Build
 
 Requires Go 1.22+.
@@ -17,6 +38,7 @@ go build -o veracode-api.exe ./cmd/veracode-api
 Credentials are loaded in priority order:
 
 1. **`~/.veracode/veracode.yml`**
+
    ```yaml
    api:
      key-id: "your-api-id"
@@ -25,6 +47,7 @@ Credentials are loaded in priority order:
    ```
 
 2. **Environment variables**
+
    ```bash
    VERACODE_API_ID=your-api-id
    VERACODE_API_KEY=your-api-key
@@ -51,40 +74,40 @@ When you pass `--sandbox` to `static` or `scaninfo`, the CLI accepts either a sa
 
 ## Usage
 
-```
+```text
 veracode-api <domain> [flags]
 ```
 
 ### Domains
 
-| Domain      | Description |
-|-------------|-------------|
-| `static`    | SAST findings from the latest policy scan |
-| `dynamic`   | DAST findings from the latest policy scan |
-| `sca`       | SCA component vulnerability findings |
-| `appinfo`   | Application profile details |
-| `apps`      | List application profiles |
+| Domain | Description |
+| --- | --- |
+| `static` | SAST findings from the latest policy scan |
+| `dynamic` | DAST findings from the latest policy scan |
+| `sca` | SCA component vulnerability findings |
+| `appinfo` | Application profile details |
+| `apps` | List application profiles |
 | `sandboxes` | List sandboxes for an application |
-| `scaninfo`  | Scan/build metadata for an application |
+| `scaninfo` | Scan/build metadata for an application |
 
 ### Application flags (`static`, `dynamic`, `sca`, `appinfo`, `sandboxes`, `scaninfo`)
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--app string` | | Application profile name |
 | `--workspace-root dir` | cwd | Directory containing `.veracode-workspace.json` |
 
 ### Apps flags (`apps`)
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--page int` | 0 | Page number |
 | `--size int` | 100 | Page size |
 
 ### Findings flags (`static`, `dynamic`, `sca`)
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--severity int` | | Exact severity filter (0 = informational … 5 = very high) |
 | `--status string` | | Comma-separated statuses: `NEW`, `OPEN`, `FIXED`, `MITIGATED` |
 | `--cwe-ids string` | | Comma-separated CWE IDs |
@@ -95,7 +118,7 @@ veracode-api <domain> [flags]
 ### Static flags
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--sandbox string` | | Sandbox name or GUID (omit for policy scan) |
 | `--exclude-mitigations` | false | Exclude mitigation annotation details |
 | `--flaw-id int` | | Return call-stack data paths for a specific finding |
@@ -103,14 +126,14 @@ veracode-api <domain> [flags]
 ### Dynamic flags
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--exclude-mitigations` | false | Exclude mitigation annotation details |
 | `--flaw-id int` | | Return HTTP request/response details for a specific finding |
 
 ### SCA flags
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--severity-gte int` | | Minimum severity (inclusive) |
 | `--cvss-gte float` | | Minimum CVSS score (inclusive) |
 | `--only-exploitable` | false | Only exploitable vulnerabilities |
@@ -119,7 +142,7 @@ veracode-api <domain> [flags]
 ### Scan Info flags
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--build-id int` | 0 | Specific build/scan ID (0 = latest scan) |
 | `--sandbox string` | | Sandbox name or GUID |
 
@@ -171,6 +194,7 @@ veracode-api scaninfo --app "MyApp" --build-id 12345678
 All commands write a JSON object to stdout and exit 0 on success, or print an error to stderr and exit 1.
 
 **Findings list** (`static`, `dynamic`, `sca`):
+
 ```json
 {
   "success": true,
@@ -198,6 +222,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Scan info** (`scaninfo`):
+
 ```json
 {
   "success": true,
@@ -226,6 +251,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Sandboxes** (`sandboxes`):
+
 ```json
 {
   "success": true,
@@ -242,6 +268,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Applications** (`apps`):
+
 ```json
 {
   "success": true,
@@ -259,6 +286,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Application info** (`appinfo`):
+
 ```json
 {
   "success": true,
@@ -286,6 +314,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Static flaw detail** (`static --flaw-id`):
+
 ```json
 {
   "success": true,
@@ -308,6 +337,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ```
 
 **Dynamic flaw detail** (`dynamic --flaw-id`):
+
 ```json
 {
   "success": true,
@@ -330,7 +360,7 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
 ## Severity scale
 
 | Value | Label |
-|-------|-------|
+| --- | --- |
 | 0 | Informational |
 | 1 | Very Low |
 | 2 | Low |
