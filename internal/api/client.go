@@ -266,6 +266,7 @@ func (c *Client) GetApplicationDetails(ctx context.Context, appGUID, appName str
 	if err := json.Unmarshal(body, &raw); err != nil {
 		return nil, fmt.Errorf("parse application details response: %w", err)
 	}
+	delete(raw, "_links")
 
 	var summary struct {
 		GUID    string `json:"guid"`
