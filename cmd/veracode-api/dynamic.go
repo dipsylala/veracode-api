@@ -13,11 +13,9 @@ func runDynamic(args []string) error {
 	fs := flag.NewFlagSet("dynamic", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var sandbox string
 	var excludeMitigations bool
 	var flawID int
 
-	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name")
 	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation annotation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve dynamic HTTP-request details")
 
@@ -25,7 +23,7 @@ func runDynamic(args []string) error {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "veracode-api dynamic: %v\n", err)
 		printFlagDefaults(fs)
-		return nil
+		return err
 	}
 
 	if flawID > 0 {
@@ -35,7 +33,6 @@ func runDynamic(args []string) error {
 	}
 
 	p := buildParams(common, "DYNAMIC")
-	p.Sandbox = sandbox
 	p.IncludeMitigations = !excludeMitigations
 
 	return execute(common, p)

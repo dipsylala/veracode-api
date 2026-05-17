@@ -86,11 +86,14 @@ type AnalysisUnitOutput struct {
 
 // GetBuildInfo fetches scan/build metadata via the Veracode XML API (v5).
 // Pass buildID = 0 to retrieve the latest scan for the application.
-func (c *Client) GetBuildInfo(ctx context.Context, appName string, appID, buildID int) (*BuildInfoOutput, error) {
+func (c *Client) GetBuildInfo(ctx context.Context, appName string, appID, buildID, sandboxID int) (*BuildInfoOutput, error) {
 	params := url.Values{}
 	params.Set("app_id", strconv.Itoa(appID))
 	if buildID != 0 {
 		params.Set("build_id", strconv.Itoa(buildID))
+	}
+	if sandboxID != 0 {
+		params.Set("sandbox_id", strconv.Itoa(sandboxID))
 	}
 
 	body, err := c.getXML(ctx, "/api/5.0/getbuildinfo.do", params)

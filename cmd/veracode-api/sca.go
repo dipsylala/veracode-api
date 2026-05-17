@@ -26,7 +26,7 @@ func runSCA(args []string) error {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "veracode-api sca: %v\n", err)
 		printFlagDefaults(fs)
-		return nil
+		return err
 	}
 
 	fs.Visit(func(flg *flag.Flag) {
@@ -41,12 +41,12 @@ func runSCA(args []string) error {
 	if severityGteSet && (severityGte < 0 || severityGte > 5) {
 		fmt.Fprintf(os.Stderr, "veracode-api sca: --severity-gte must be between 0 and 5\n")
 		printFlagDefaults(fs)
-		return nil
+		return fmt.Errorf("--severity-gte must be between 0 and 5")
 	}
 	if cvssGteSet && (cvssGte < 0.0 || cvssGte > 10.0) {
 		fmt.Fprintf(os.Stderr, "veracode-api sca: --cvss-gte must be between 0.0 and 10.0\n")
 		printFlagDefaults(fs)
-		return nil
+		return fmt.Errorf("--cvss-gte must be between 0.0 and 10.0")
 	}
 
 	p := buildParams(common, "SCA")

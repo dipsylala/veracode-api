@@ -17,7 +17,7 @@ func runStatic(args []string) error {
 	var excludeMitigations bool
 	var flawID int
 
-	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name")
+	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name or GUID")
 	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation annotation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve static call-stack details")
 
@@ -25,7 +25,7 @@ func runStatic(args []string) error {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "veracode-api static: %v\n", err)
 		printFlagDefaults(fs)
-		return nil
+		return err
 	}
 
 	if flawID > 0 {
