@@ -82,12 +82,12 @@ veracode-api <domain> [flags]
 
 | Domain | Description |
 | --- | --- |
+| `apps` | List application profiles |
+| `appinfo` | Application profile details |
+| `sandboxes` | List sandboxes for an application |
 | `static` | SAST findings from the latest policy scan |
 | `dynamic` | DAST findings from the latest policy scan |
 | `sca` | SCA component vulnerability findings |
-| `appinfo` | Application profile details |
-| `apps` | List application profiles |
-| `sandboxes` | List sandboxes for an application |
 | `scaninfo` | Scan/build metadata for an application |
 
 ### Application flags (`static`, `dynamic`, `sca`, `appinfo`, `sandboxes`, `scaninfo`)
