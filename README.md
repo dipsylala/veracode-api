@@ -1,6 +1,6 @@
 # veracode-api
 
-A single-binary CLI for querying Veracode platform findings (SAST, DAST, SCA) via the REST API. No runtime dependencies — just build and run.
+A single-binary CLI for querying Veracode platform findings and metadata (SAST, DAST, SCA, applications, sandboxes, scan info) via the Veracode REST and XML APIs. No runtime dependencies — just build and run.
 
 ## Build
 
@@ -43,6 +43,12 @@ Pass the Veracode application profile name with `--app`, or omit it to read from
 
 Use `--workspace-root` to specify the directory containing that file (defaults to the current working directory).
 
+## API usage
+
+The CLI uses the Veracode REST APIs for application lookup, application listing, findings, and sandbox listing. It uses the Veracode XML API for `scaninfo`.
+
+When you pass `--sandbox` to `static` or `scaninfo`, the CLI accepts either a sandbox name or a sandbox GUID and resolves it automatically. Omitting `--sandbox` uses the latest policy scan context for that application. Dynamic scans do not use sandboxes.
+
 ## Usage
 
 ```
@@ -56,14 +62,28 @@ veracode-api <domain> [flags]
 | `static`    | SAST findings from the latest policy scan |
 | `dynamic`   | DAST findings from the latest policy scan |
 | `sca`       | SCA component vulnerability findings |
+| `apps`      | List application profiles |
+| `sandboxes` | List sandboxes for an application |
 | `scaninfo`  | Scan/build metadata for an application |
 
-### Common flags (all domains)
+### Application flags (`static`, `dynamic`, `sca`, `sandboxes`, `scaninfo`)
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--app string` | | Application profile name |
 | `--workspace-root dir` | cwd | Directory containing `.veracode-workspace.json` |
+
+### Apps flags (`apps`)
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--page int` | 0 | Page number |
+| `--size int` | 100 | Page size |
+
+### Findings flags (`static`, `dynamic`, `sca`)
+
+| Flag | Default | Description |
+|------|---------|-------------|
 | `--severity int` | | Exact severity filter (0 = informational … 5 = very high) |
 | `--status string` | | Comma-separated statuses: `NEW`, `OPEN`, `FIXED`, `MITIGATED` |
 | `--cwe-ids string` | | Comma-separated CWE IDs |
@@ -75,17 +95,16 @@ veracode-api <domain> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--sandbox string` | | Sandbox name (omit for policy scan) |
+| `--sandbox string` | | Sandbox name or GUID (omit for policy scan) |
 | `--exclude-mitigations` | false | Exclude mitigation annotation details |
-| `--flaw-id string` | | Return call-stack data paths for a specific finding |
+| `--flaw-id int` | | Return call-stack data paths for a specific finding |
 
 ### Dynamic flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--sandbox string` | | Sandbox name |
 | `--exclude-mitigations` | false | Exclude mitigation annotation details |
-| `--flaw-id string` | | Return HTTP request/response details for a specific finding |
+| `--flaw-id int` | | Return HTTP request/response details for a specific finding |
 
 ### SCA flags
 
@@ -101,12 +120,13 @@ veracode-api <domain> [flags]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--build-id int` | 0 | Specific build/scan ID (0 = latest scan) |
+| `--sandbox string` | | Sandbox name or GUID |
 
 ## Examples
 
 ```bash
 # All high/very-high SAST findings that violate policy
-veracode-api static --app "MyApp" --severity-gte 4 --violates-policy
+veracode-api static --app "MyApp" --severity 4 --violates-policy
 
 # New DAST findings, first 25
 veracode-api dynamic --app "MyApp" --status "NEW" --size 25
@@ -123,8 +143,20 @@ veracode-api dynamic --app "MyApp" --flaw-id 12345
 # Using workspace config instead of --app
 veracode-api static --workspace-root /path/to/project --status "NEW,OPEN"
 
+# List application profiles
+veracode-api apps
+
+# List the first 25 application profiles
+veracode-api apps --size 25
+
+# List sandboxes for an application
+veracode-api sandboxes --app "MyApp"
+
 # Latest scan metadata
 veracode-api scaninfo --app "MyApp"
+
+# Latest sandbox scan metadata
+veracode-api scaninfo --app "MyApp" --sandbox "Project Security"
 
 # Specific scan metadata
 veracode-api scaninfo --app "MyApp" --build-id 12345678
@@ -140,9 +172,9 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
   "success": true,
   "app": "MyApp",
   "domain": "static",
-  "total_findings": 42,
+  "total_count": 42,
   "page": 0,
-  "page_size": 100,
+  "size": 100,
   "findings": [
     {
       "issue_id": 12345,
@@ -184,6 +216,39 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
       "analysis_type": "Static",
       "status": "Results Ready",
       "engine_version": "20230905230425"
+    }
+  ]
+}
+```
+
+**Sandboxes** (`sandboxes`):
+```json
+{
+  "success": true,
+  "app": "MyApp",
+  "total_sandboxes": 2,
+  "sandboxes": [
+    {
+      "guid": "11111111-1111-1111-1111-111111111111",
+      "id": 12345,
+      "name": "Project Security"
+    }
+  ]
+}
+```
+
+**Applications** (`apps`):
+```json
+{
+  "success": true,
+  "total_applications": 2,
+  "page": 0,
+  "size": 100,
+  "applications": [
+    {
+      "guid": "22222222-2222-2222-2222-222222222222",
+      "id": 1234567,
+      "name": "MyApp"
     }
   ]
 }

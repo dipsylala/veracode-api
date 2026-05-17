@@ -110,6 +110,11 @@ type appSearchResponse struct {
 			} `json:"profile"`
 		} `json:"applications"`
 	} `json:"_embedded"`
+	Page struct {
+		TotalElements int `json:"total_elements"`
+		Number        int `json:"number"`
+		Size          int `json:"size"`
+	} `json:"page"`
 }
 
 // AppInfo holds the identifiers for a Veracode application.
@@ -117,6 +122,51 @@ type AppInfo struct {
 	GUID string // REST API UUID
 	ID   int    // Legacy numeric ID (used by the XML API)
 	Name string
+}
+
+// ApplicationSummary is one application profile in the apps command output.
+type ApplicationSummary struct {
+	GUID string `json:"guid"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// ApplicationListOutput is the JSON written to stdout for an apps query.
+type ApplicationListOutput struct {
+	Success           bool                 `json:"success"`
+	TotalApplications int                  `json:"total_applications"`
+	Page              int                  `json:"page"`
+	Size              int                  `json:"size"`
+	Applications      []ApplicationSummary `json:"applications"`
+}
+
+// SandboxInfo holds the identifiers for a Veracode sandbox.
+type SandboxInfo struct {
+	GUID string `json:"guid"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// SandboxListOutput is the JSON written to stdout for a sandbox query.
+type SandboxListOutput struct {
+	Success        bool          `json:"success"`
+	App            string        `json:"app"`
+	TotalSandboxes int           `json:"total_sandboxes"`
+	Sandboxes      []SandboxInfo `json:"sandboxes"`
+}
+
+type sandboxListResponse struct {
+	Embedded struct {
+		Sandboxes []struct {
+			GUID        string `json:"guid"`
+			ID          int    `json:"id"`
+			Name        string `json:"name"`
+			SandboxName string `json:"sandbox_name"`
+			Profile     struct {
+				Name string `json:"name"`
+			} `json:"profile"`
+		} `json:"sandboxes"`
+	} `json:"_embedded"`
 }
 
 // GetAppInfo resolves an application name to its GUID and numeric ID.
@@ -149,6 +199,127 @@ func (c *Client) GetAppGUID(ctx context.Context, name string) (string, error) {
 		return "", err
 	}
 	return info.GUID, nil
+}
+
+// GetApplications returns a page of visible application profiles.
+func (c *Client) GetApplications(ctx context.Context, page, size int) (*ApplicationListOutput, error) {
+	params := url.Values{}
+	params.Set("page", fmt.Sprintf("%d", page))
+	params.Set("size", fmt.Sprintf("%d", size))
+
+	body, err := c.get(ctx, "/appsec/v1/applications", params)
+	if err != nil {
+		return nil, fmt.Errorf("application list: %w", err)
+	}
+
+	var resp appSearchResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("parse application list response: %w", err)
+	}
+
+	applications := make([]ApplicationSummary, 0, len(resp.Embedded.Applications))
+	for _, app := range resp.Embedded.Applications {
+		applications = append(applications, ApplicationSummary{
+			GUID: app.GUID,
+			ID:   app.ID,
+			Name: app.Profile.Name,
+		})
+	}
+
+	return &ApplicationListOutput{
+		Success:           true,
+		TotalApplications: resp.Page.TotalElements,
+		Page:              resp.Page.Number,
+		Size:              resp.Page.Size,
+		Applications:      applications,
+	}, nil
+}
+
+// GetSandboxes returns the sandboxes for an application profile.
+func (c *Client) GetSandboxes(ctx context.Context, appGUID string) ([]SandboxInfo, error) {
+	body, err := c.get(ctx, fmt.Sprintf("/appsec/v1/applications/%s/sandboxes", appGUID), nil)
+	if err != nil {
+		return nil, fmt.Errorf("sandbox lookup: %w", err)
+	}
+
+	var resp sandboxListResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("parse sandbox response: %w", err)
+	}
+
+	sandboxes := make([]SandboxInfo, 0, len(resp.Embedded.Sandboxes))
+	for _, sandbox := range resp.Embedded.Sandboxes {
+		name := sandbox.Name
+		if name == "" {
+			name = sandbox.SandboxName
+		}
+		if name == "" {
+			name = sandbox.Profile.Name
+		}
+
+		sandboxes = append(sandboxes, SandboxInfo{
+			GUID: sandbox.GUID,
+			ID:   sandbox.ID,
+			Name: name,
+		})
+	}
+
+	return sandboxes, nil
+}
+
+// ResolveSandboxGUID accepts either a sandbox GUID or a sandbox name.
+func (c *Client) ResolveSandboxGUID(ctx context.Context, appGUID, sandbox string) (string, error) {
+	info, err := c.ResolveSandboxInfo(ctx, appGUID, sandbox)
+	if err != nil {
+		return "", err
+	}
+	return info.GUID, nil
+}
+
+// ResolveSandboxInfo accepts either a sandbox GUID or a sandbox name.
+func (c *Client) ResolveSandboxInfo(ctx context.Context, appGUID, sandbox string) (SandboxInfo, error) {
+	if sandbox == "" {
+		return SandboxInfo{}, nil
+	}
+
+	sandboxes, err := c.GetSandboxes(ctx, appGUID)
+	if err != nil {
+		return SandboxInfo{}, err
+	}
+
+	for _, candidate := range sandboxes {
+		if strings.EqualFold(candidate.GUID, sandbox) || strings.EqualFold(candidate.Name, sandbox) {
+			return candidate, nil
+		}
+	}
+
+	available := make([]string, 0, len(sandboxes))
+	for _, candidate := range sandboxes {
+		if candidate.Name != "" {
+			available = append(available, candidate.Name)
+		}
+	}
+
+	if len(available) == 0 {
+		return SandboxInfo{}, fmt.Errorf("sandbox not found: %s", sandbox)
+	}
+
+	return SandboxInfo{}, fmt.Errorf("sandbox not found: %s (available: %s)", sandbox, strings.Join(available, ", "))
+}
+
+// GetSandboxList returns the sandbox list in CLI output format.
+func (c *Client) GetSandboxList(ctx context.Context, appGUID, appName string) (*SandboxListOutput, error) {
+	sandboxes, err := c.GetSandboxes(ctx, appGUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SandboxListOutput{
+		Success:        true,
+		App:            appName,
+		TotalSandboxes: len(sandboxes),
+		Sandboxes:      sandboxes,
+	}, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -290,7 +461,11 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 		params.Set("violates_policy", fmt.Sprintf("%t", *p.ViolatesPolicy))
 	}
 	if p.Sandbox != "" {
-		params.Set("context", p.Sandbox)
+		sandboxGUID, err := c.ResolveSandboxGUID(ctx, appGUID, p.Sandbox)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("context", sandboxGUID)
 	}
 	if p.IncludeMitigations {
 		params.Set("include_annot", "true")

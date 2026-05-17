@@ -15,13 +15,17 @@ Domains:
   static    SAST (static analysis) findings
   dynamic   DAST (dynamic analysis) findings
   sca       SCA component vulnerability findings
+	apps      List application profiles
+	sandboxes List sandboxes for an application
   scaninfo  Scan/build metadata (latest or specific scan)
   version   Print version and exit
 
-Common flags:
+Application flags (static, dynamic, sca, sandboxes, scaninfo):
   --app string           Application profile name
                          (falls back to .veracode-workspace.json in --workspace-root)
   --workspace-root dir   Directory to search for .veracode-workspace.json (default: cwd)
+
+Findings only:
   --severity int         Exact severity filter (0-5)
   --status string        Comma-separated finding statuses (NEW,OPEN,FIXED,MITIGATED)
   --cwe-ids string       Comma-separated CWE IDs
@@ -29,8 +33,15 @@ Common flags:
   --page int             Page number (default 0)
   --size int             Page size (default 100)
 
-Static / Dynamic only:
-  --sandbox string       Sandbox name
+Apps only:
+	--page int             Page number (default 0)
+	--size int             Page size (default 100)
+
+Static only:
+	--sandbox string       Sandbox name or GUID
+  --exclude-mitigations  Exclude mitigation annotation details
+
+Dynamic only:
   --exclude-mitigations  Exclude mitigation annotation details
 
 SCA only:
@@ -41,6 +52,7 @@ SCA only:
 
 Scan Info only:
   --build-id int         Specific build/scan ID (default: latest scan)
+	--sandbox string       Sandbox name or GUID
 `
 
 func main() {
@@ -57,6 +69,10 @@ func main() {
 		err = runDynamic(os.Args[2:])
 	case "sca":
 		err = runSCA(os.Args[2:])
+	case "apps":
+		err = runApps(os.Args[2:])
+	case "sandboxes":
+		err = runSandboxes(os.Args[2:])
 	case "scaninfo":
 		err = runScanInfo(os.Args[2:])
 	case "version", "--version", "-version":
