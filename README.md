@@ -149,24 +149,6 @@ veracode-api <domain> [flags]
 ## Examples
 
 ```bash
-# All high/very-high SAST findings that violate policy
-veracode-api static --app "MyApp" --severity 4 --violates-policy
-
-# New DAST findings, first 25
-veracode-api dynamic --app "MyApp" --status "NEW" --size 25
-
-# SCA findings with CVSS >= 7
-veracode-api sca --app "MyApp" --cvss-gte 7.0
-
-# Call-stack detail for a specific static finding
-veracode-api static --app "MyApp" --flaw-id 12345
-
-# HTTP request/response detail for a specific dynamic finding
-veracode-api dynamic --app "MyApp" --flaw-id 12345
-
-# Using workspace config instead of --app
-veracode-api static --workspace-root /path/to/project --status "NEW,OPEN"
-
 # List application profiles
 veracode-api apps
 
@@ -184,6 +166,24 @@ veracode-api scaninfo --app "MyApp"
 
 # Latest sandbox scan metadata
 veracode-api scaninfo --app "MyApp" --sandbox "Project Security"
+
+# All high/very-high SAST findings that violate policy
+veracode-api static --app "MyApp" --severity 4 --violates-policy
+
+# New DAST findings, first 25
+veracode-api dynamic --app "MyApp" --status "NEW" --size 25
+
+# SCA findings with CVSS >= 7
+veracode-api sca --app "MyApp" --cvss-gte 7.0
+
+# Call-stack detail for a specific static finding
+veracode-api static --app "MyApp" --flaw-id 12345
+
+# HTTP request/response detail for a specific dynamic finding
+veracode-api dynamic --app "MyApp" --flaw-id 12345
+
+# Using workspace config instead of --app
+veracode-api static --workspace-root /path/to/project --status "NEW,OPEN"
 
 # Specific scan metadata
 veracode-api scaninfo --app "MyApp" --build-id 12345678
