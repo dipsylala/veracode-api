@@ -15,12 +15,13 @@ Domains:
   static    SAST (static analysis) findings
   dynamic   DAST (dynamic analysis) findings
   sca       SCA component vulnerability findings
+	appinfo   Application profile details
 	apps      List application profiles
 	sandboxes List sandboxes for an application
   scaninfo  Scan/build metadata (latest or specific scan)
   version   Print version and exit
 
-Application flags (static, dynamic, sca, sandboxes, scaninfo):
+Application flags (static, dynamic, sca, appinfo, sandboxes, scaninfo):
   --app string           Application profile name
                          (falls back to .veracode-workspace.json in --workspace-root)
   --workspace-root dir   Directory to search for .veracode-workspace.json (default: cwd)
@@ -69,6 +70,8 @@ func main() {
 		err = runDynamic(os.Args[2:])
 	case "sca":
 		err = runSCA(os.Args[2:])
+	case "appinfo":
+		err = runAppInfo(os.Args[2:])
 	case "apps":
 		err = runApps(os.Args[2:])
 	case "sandboxes":
