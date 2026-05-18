@@ -105,10 +105,10 @@ func runDynamic(args []string) error {
 	fs := flag.NewFlagSet("dynamic", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	var excludeMitigations bool
+	var includeMitigations bool
 	var flawID int
 
-	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation details")
+	fs.BoolVar(&includeMitigations, "include-mitigations", false, "Include mitigation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve dynamic HTTP-request details")
 
 	findings, err := parseFindings(fs, args)
@@ -129,7 +129,7 @@ func runDynamic(args []string) error {
 	}
 
 	p := buildParams(findings, "DYNAMIC")
-	p.IncludeMitigations = !excludeMitigations
+	p.IncludeMitigations = includeMitigations
 
 	return run(findings.format, findings.app, findings.workspaceRoot, func(ctx context.Context, c *api.Client, appGUID, appName string) (Renderer, error) {
 		out, err := c.GetFindings(ctx, appGUID, appName, p)

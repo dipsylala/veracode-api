@@ -44,10 +44,10 @@ Apps only:
 
 Static only:
   --sandbox string       Sandbox name or GUID
-  --exclude-mitigations  Exclude mitigation details
+  --include-mitigations  Include mitigation details
 
 Dynamic only:
-  --exclude-mitigations  Exclude mitigation details
+  --include-mitigations  Include mitigation details
 
 SCA only:
   --only-exploitable     Only exploitable vulnerabilities
