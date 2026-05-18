@@ -15,9 +15,9 @@ Domains:
   static    SAST (static analysis) findings
   dynamic   DAST (dynamic analysis) findings
   sca       SCA component vulnerability findings
-	appinfo   Application profile details
-	apps      List application profiles
-	sandboxes List sandboxes for an application
+  appinfo  Application profile details
+  apps     List application profiles
+  sandboxes List sandboxes for an application
   scaninfo  Scan/build metadata (latest or specific scan)
   version   Print version and exit
 
@@ -39,11 +39,11 @@ Findings only:
   --size int             Page size (default 100)
 
 Apps only:
-	--page int             Page number (default 0)
-	--size int             Page size (default 100)
+  --page int             Page number (default 0)
+  --size int             Page size (default 100)
 
 Static only:
-	--sandbox string       Sandbox name or GUID
+  --sandbox string       Sandbox name or GUID
   --exclude-mitigations  Exclude mitigation annotation details
 
 Dynamic only:
@@ -55,7 +55,7 @@ SCA only:
 
 Scan Info only:
   --build-id int         Specific build/scan ID (default: latest scan)
-	--sandbox string       Sandbox name or GUID
+  --sandbox string       Sandbox name or GUID
 `
 
 func main() {
