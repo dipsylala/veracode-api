@@ -95,11 +95,11 @@ func runStatic(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	var sandbox string
-	var excludeMitigations bool
+	var includeMitigations bool
 	var flawID int
 
 	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name or GUID")
-	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation details")
+	fs.BoolVar(&includeMitigations, "include-mitigations", false, "Include mitigation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve static call-stack details")
 
 	findings, err := parseFindings(fs, args)
@@ -122,7 +122,7 @@ func runStatic(args []string) error {
 
 	p := buildParams(findings, "STATIC")
 	p.Sandbox = sandbox
-	p.IncludeMitigations = !excludeMitigations
+	p.IncludeMitigations = includeMitigations
 
 	return run(findings.format, findings.app, findings.workspaceRoot, func(ctx context.Context, c *api.Client, appGUID, appName string) (Renderer, error) {
 		out, err := c.GetFindings(ctx, appGUID, appName, p)

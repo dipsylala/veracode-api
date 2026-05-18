@@ -125,14 +125,14 @@ veracode-api <domain> [flags]
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--sandbox string` | | Sandbox name or GUID (omit for policy scan) |
-| `--exclude-mitigations` | false | Exclude mitigation details |
+| `--include-mitigations` | false | Include mitigation details |
 | `--flaw-id int` | | Return call-stack data paths for a specific finding |
 
 ### Dynamic flags
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--exclude-mitigations` | false | Exclude mitigation details |
+| `--include-mitigations` | false | Include mitigation details |
 | `--flaw-id int` | | Return HTTP request/response details for a specific finding |
 
 ### SCA flags
@@ -195,7 +195,7 @@ veracode-api scaninfo --app "MyApp" --build-id 12345678
 
 All commands write JSON to stdout by default. Pass `--format markdown` to render markdown instead. Commands exit 0 on success, or print an error to stderr and exit 1.
 
-Static and dynamic findings include mitigation details by default when the API returns them. Pass `--exclude-mitigations` to omit those details.
+Static and dynamic findings omit mitigation details by default. Pass `--include-mitigations` to request and render mitigation details when the API returns them.
 
 **Findings list** (`static`, `dynamic`, `sca`):
 
