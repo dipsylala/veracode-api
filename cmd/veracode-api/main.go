@@ -32,9 +32,9 @@ Findings only:
   --severity-gte int     Minimum severity (>= value)
   --cvss float           Exact CVSS score (0-10)
   --cvss-gte float       Minimum CVSS score (>= value, 0-10)
-  --status string        Comma-separated finding statuses (NEW,OPEN,FIXED,MITIGATED)
   --cwe-ids string       Comma-separated CWE IDs
   --violates-policy      Only show policy-violating findings
+  --only-new             Only findings that are new in the current context
   --page int             Page number (default 0)
   --size int             Page size (default 100)
 
@@ -44,14 +44,13 @@ Apps only:
 
 Static only:
   --sandbox string       Sandbox name or GUID
-  --exclude-mitigations  Exclude mitigation annotation details
+  --exclude-mitigations  Exclude mitigation details
 
 Dynamic only:
-  --exclude-mitigations  Exclude mitigation annotation details
+  --exclude-mitigations  Exclude mitigation details
 
 SCA only:
   --only-exploitable     Only exploitable vulnerabilities
-  --only-new             Only new findings
 
 Scan Info only:
   --build-id int         Specific build/scan ID (default: latest scan)

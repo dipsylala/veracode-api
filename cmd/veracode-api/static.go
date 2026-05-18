@@ -46,6 +46,7 @@ func (s *staticOutput) WriteMarkdown(w io.Writer) error {
 			fmt.Fprintf(w, "**Attack vector:** %s  \n", f.AttackVector)
 		}
 		fmt.Fprintln(w)
+		writeMitigationsMarkdown(w, f)
 	}
 	return nil
 }
@@ -98,7 +99,7 @@ func runStatic(args []string) error {
 	var flawID int
 
 	fs.StringVar(&sandbox, "sandbox", "", "Sandbox name or GUID")
-	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation annotation details")
+	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve static call-stack details")
 
 	findings, err := parseFindings(fs, args)
