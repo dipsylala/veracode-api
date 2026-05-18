@@ -2,6 +2,8 @@
 
 A single-binary CLI for querying Veracode platform findings and metadata (SAST, DAST, SCA, applications, sandboxes, scan info) via the Veracode REST and XML APIs. No runtime dependencies — just build and run.
 
+This is focused on core read-only functionality to assist with reading from the Veracode platform. If you want more programmatic customisable access to the Veracode API, I recommend [https://github.com/veracode/veracode-api-py](https://github.com/veracode/veracode-api-py).
+
 ## Quick Start
 
 Create `~/.veracode/veracode.yml` with your Veracode API credentials:
