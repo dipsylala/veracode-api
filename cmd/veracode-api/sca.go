@@ -63,10 +63,8 @@ func runSCA(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	var onlyExploitable bool
-	var onlyNew bool
 
 	fs.BoolVar(&onlyExploitable, "only-exploitable", false, "Only exploitable vulnerabilities")
-	fs.BoolVar(&onlyNew, "only-new", false, "Only new findings")
 
 	findings, err := parseFindings(fs, args)
 	if err != nil {
@@ -77,7 +75,6 @@ func runSCA(args []string) error {
 
 	p := buildParams(findings, "SCA")
 	p.OnlyExploitable = onlyExploitable
-	p.OnlyNew = onlyNew
 
 	return run(findings.format, findings.app, findings.workspaceRoot, func(ctx context.Context, c *api.Client, appGUID, appName string) (Renderer, error) {
 		out, err := c.GetFindings(ctx, appGUID, appName, p)

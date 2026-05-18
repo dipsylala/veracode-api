@@ -114,9 +114,9 @@ veracode-api <domain> [flags]
 | `--severity-gte int` | | Minimum severity filter (inclusive) |
 | `--cvss float` | | Exact CVSS score filter (0-10) |
 | `--cvss-gte float` | | Minimum CVSS score filter (inclusive) |
-| `--status string` | | Comma-separated statuses: `NEW`, `OPEN`, `FIXED`, `MITIGATED` |
 | `--cwe-ids string` | | Comma-separated CWE IDs |
 | `--violates-policy` | false | Only policy-violating findings |
+| `--only-new` | false | Only findings that are new in the current context |
 | `--page int` | 0 | Page number |
 | `--size int` | 100 | Page size |
 
@@ -125,14 +125,14 @@ veracode-api <domain> [flags]
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--sandbox string` | | Sandbox name or GUID (omit for policy scan) |
-| `--exclude-mitigations` | false | Exclude mitigation annotation details |
+| `--exclude-mitigations` | false | Exclude mitigation details |
 | `--flaw-id int` | | Return call-stack data paths for a specific finding |
 
 ### Dynamic flags
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--exclude-mitigations` | false | Exclude mitigation annotation details |
+| `--exclude-mitigations` | false | Exclude mitigation details |
 | `--flaw-id int` | | Return HTTP request/response details for a specific finding |
 
 ### SCA flags
@@ -140,7 +140,6 @@ veracode-api <domain> [flags]
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--only-exploitable` | false | Only exploitable vulnerabilities |
-| `--only-new` | false | Only new findings |
 
 ### Scan Info flags
 
@@ -174,7 +173,7 @@ veracode-api scaninfo --app "MyApp" --sandbox "Project Security"
 veracode-api static --app "MyApp" --severity 4 --violates-policy
 
 # New DAST findings, first 25
-veracode-api dynamic --app "MyApp" --status "NEW" --size 25
+veracode-api dynamic --app "MyApp" --only-new --size 25
 
 # SCA findings with CVSS >= 7
 veracode-api sca --app "MyApp" --cvss-gte 7.0
@@ -186,7 +185,7 @@ veracode-api static --app "MyApp" --flaw-id 12345
 veracode-api dynamic --app "MyApp" --flaw-id 12345
 
 # Using workspace config instead of --app
-veracode-api static --workspace-root /path/to/project --status "NEW,OPEN"
+veracode-api static --workspace-root /path/to/project --only-new
 
 # Specific scan metadata
 veracode-api scaninfo --app "MyApp" --build-id 12345678
@@ -195,6 +194,8 @@ veracode-api scaninfo --app "MyApp" --build-id 12345678
 ## Output
 
 All commands write JSON to stdout by default. Pass `--format markdown` to render markdown instead. Commands exit 0 on success, or print an error to stderr and exit 1.
+
+Static and dynamic findings include mitigation details by default when the API returns them. Pass `--exclude-mitigations` to omit those details.
 
 **Findings list** (`static`, `dynamic`, `sca`):
 
@@ -217,7 +218,15 @@ All commands write JSON to stdout by default. Pass `--format markdown` to render
       "violates_policy": true,
       "file_path": "src/main/java/com/example/Dao.java",
       "line_number": 42,
-      "module": "app.war"
+      "module": "app.war",
+      "mitigations": [
+        {
+          "action": "APPDESIGN",
+          "comment": "Accepted by design.",
+          "created": "2026-01-10T14:22:31.000Z",
+          "user_name": "security@example.com"
+        }
+      ]
     }
   ]
 }

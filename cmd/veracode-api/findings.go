@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"strings"
 
 	"veracode-api/internal/api"
@@ -20,9 +21,9 @@ type findingsFlags struct {
 	cvssSet        bool
 	cvssGte        float64
 	cvssGteSet     bool
-	status         string
 	cweIDs         string
 	violatesPolicy bool
+	onlyNew        bool
 	page           int
 	size           int
 	format         string
@@ -37,9 +38,9 @@ func parseFindings(fs *flag.FlagSet, args []string) (findingsFlags, error) {
 	fs.IntVar(&f.severityGte, "severity-gte", -1, "Minimum severity (0-5)")
 	fs.Float64Var(&f.cvss, "cvss", -1, "Exact CVSS score (0-10)")
 	fs.Float64Var(&f.cvssGte, "cvss-gte", -1, "Minimum CVSS score (>= value, 0-10)")
-	fs.StringVar(&f.status, "status", "", "Comma-separated finding statuses")
 	fs.StringVar(&f.cweIDs, "cwe-ids", "", "Comma-separated CWE IDs")
 	fs.BoolVar(&f.violatesPolicy, "violates-policy", false, "Only policy-violating findings")
+	fs.BoolVar(&f.onlyNew, "only-new", false, "Only findings that are new in the current context")
 	fs.IntVar(&f.page, "page", 0, "Page number")
 	fs.IntVar(&f.size, "size", 100, "Page size")
 	fs.StringVar(&f.format, "format", "json", "Output format: json or markdown")
@@ -102,9 +103,6 @@ func buildParams(f findingsFlags, scanType string) api.FindingsParams {
 	if f.cvssGteSet {
 		p.CvssGte = &f.cvssGte
 	}
-	if f.status != "" {
-		p.Status = strings.Split(f.status, ",")
-	}
 	if f.cweIDs != "" {
 		p.CWEIDs = strings.Split(f.cweIDs, ",")
 	}
@@ -112,5 +110,56 @@ func buildParams(f findingsFlags, scanType string) api.FindingsParams {
 		t := true
 		p.ViolatesPolicy = &t
 	}
+	p.OnlyNew = f.onlyNew
 	return p
+}
+
+func hasMitigations(findings []api.OutputFinding) bool {
+	for _, f := range findings {
+		if len(f.Mitigations) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func mitigationSummary(m api.OutputMitigation) string {
+	parts := make([]string, 0, 5)
+	if m.Comment != "" {
+		parts = append(parts, m.Comment)
+	}
+	if m.Specifics != "" {
+		parts = append(parts, "Specifics: "+m.Specifics)
+	}
+	if m.Technique != "" {
+		parts = append(parts, "Technique: "+m.Technique)
+	}
+	if m.RemainingRisk != "" {
+		parts = append(parts, "Remaining risk: "+m.RemainingRisk)
+	}
+	if m.Verification != "" {
+		parts = append(parts, "Verification: "+m.Verification)
+	}
+	return strings.Join(parts, " ")
+}
+
+func markdownCell(s string) string {
+	s = strings.ReplaceAll(s, "\r\n", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "|", "\\|")
+	return strings.TrimSpace(strings.Join(strings.Fields(s), " "))
+}
+
+func writeMitigationsMarkdown(w io.Writer, finding api.OutputFinding) {
+	if len(finding.Mitigations) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "#### Mitigations for finding %d\n\n", finding.IssueID)
+	fmt.Fprintln(w, "| Action | User | Date | Notes |")
+	fmt.Fprintln(w, "|:--|:--|:--|:--|")
+	for _, m := range finding.Mitigations {
+		fmt.Fprintf(w, "| %s | %s | %s | %s |\n",
+			markdownCell(m.Action), markdownCell(m.UserName), markdownCell(m.Created), markdownCell(mitigationSummary(m)))
+	}
+	fmt.Fprintln(w)
 }

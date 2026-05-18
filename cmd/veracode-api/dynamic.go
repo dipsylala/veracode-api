@@ -32,6 +32,14 @@ func (d *dynamicOutput) WriteMarkdown(w io.Writer) error {
 			f.IssueID, f.Severity, f.CWEID, f.Status, policyMark(f.ViolatesPolicy),
 			f.URL)
 	}
+	if hasMitigations(out.Findings) {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "## Mitigations")
+		fmt.Fprintln(w)
+		for _, f := range out.Findings {
+			writeMitigationsMarkdown(w, f)
+		}
+	}
 	return nil
 }
 
@@ -100,7 +108,7 @@ func runDynamic(args []string) error {
 	var excludeMitigations bool
 	var flawID int
 
-	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation annotation details")
+	fs.BoolVar(&excludeMitigations, "exclude-mitigations", false, "Exclude mitigation details")
 	fs.IntVar(&flawID, "flaw-id", 0, "Issue ID of a specific flaw to retrieve dynamic HTTP-request details")
 
 	findings, err := parseFindings(fs, args)

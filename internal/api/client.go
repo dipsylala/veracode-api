@@ -434,7 +434,6 @@ type FindingsParams struct {
 	SeverityGte        *int
 	Cvss               *float64
 	CvssGte            *float64
-	Status             []string
 	CWEIDs             []string
 	ViolatesPolicy     *bool
 	Sandbox            string
@@ -464,7 +463,17 @@ type rawFinding struct {
 	Description    string `json:"description"`
 	BuildID        int    `json:"build_id"`
 	ViolatesPolicy bool   `json:"violates_policy"`
-	FindingStatus  struct {
+	Annotations    []struct {
+		Action        string `json:"action"`
+		Comment       string `json:"comment"`
+		Created       string `json:"created"`
+		RemainingRisk string `json:"remaining_risk"`
+		Specifics     string `json:"specifics"`
+		Technique     string `json:"technique"`
+		UserName      string `json:"user_name"`
+		Verification  string `json:"verification"`
+	} `json:"annotations"`
+	FindingStatus struct {
 		Status         string `json:"status"`
 		Resolution     string `json:"resolution"`
 		FirstFoundDate string `json:"first_found_date"`
@@ -497,29 +506,42 @@ type rawFinding struct {
 
 // OutputFinding is the clean per-finding structure written to stdout.
 type OutputFinding struct {
-	IssueID        int     `json:"issue_id,omitempty"`
-	ScanType       string  `json:"scan_type"`
-	Severity       int     `json:"severity"`
-	CWEID          int     `json:"cwe_id,omitempty"`
-	Status         string  `json:"status"`
-	Resolution     string  `json:"resolution,omitempty"`
-	ViolatesPolicy bool    `json:"violates_policy"`
-	IsNew          bool    `json:"new,omitempty"`
-	FirstFoundDate string  `json:"first_found_date,omitempty"`
-	LastSeenDate   string  `json:"last_seen_date,omitempty"`
-	Description    string  `json:"description,omitempty"`
-	Title          string  `json:"title,omitempty"`
-	FilePath       string  `json:"file_path,omitempty"`
-	FileName       string  `json:"file_name,omitempty"`
-	LineNumber     int     `json:"line_number,omitempty"`
-	Module         string  `json:"module,omitempty"`
-	Exploitability int     `json:"exploitability,omitempty"`
-	AttackVector   string  `json:"attack_vector,omitempty"`
-	URL            string  `json:"url,omitempty"`
-	Component      string  `json:"component,omitempty"`
-	Version        string  `json:"version,omitempty"`
-	CVE            string  `json:"cve,omitempty"`
-	CVSS           float64 `json:"cvss,omitempty"`
+	IssueID        int                `json:"issue_id,omitempty"`
+	ScanType       string             `json:"scan_type"`
+	Severity       int                `json:"severity"`
+	CWEID          int                `json:"cwe_id,omitempty"`
+	Status         string             `json:"status"`
+	Resolution     string             `json:"resolution,omitempty"`
+	ViolatesPolicy bool               `json:"violates_policy"`
+	IsNew          bool               `json:"new,omitempty"`
+	FirstFoundDate string             `json:"first_found_date,omitempty"`
+	LastSeenDate   string             `json:"last_seen_date,omitempty"`
+	Description    string             `json:"description,omitempty"`
+	Title          string             `json:"title,omitempty"`
+	FilePath       string             `json:"file_path,omitempty"`
+	FileName       string             `json:"file_name,omitempty"`
+	LineNumber     int                `json:"line_number,omitempty"`
+	Module         string             `json:"module,omitempty"`
+	Exploitability int                `json:"exploitability,omitempty"`
+	AttackVector   string             `json:"attack_vector,omitempty"`
+	URL            string             `json:"url,omitempty"`
+	Component      string             `json:"component,omitempty"`
+	Version        string             `json:"version,omitempty"`
+	CVE            string             `json:"cve,omitempty"`
+	CVSS           float64            `json:"cvss,omitempty"`
+	Mitigations    []OutputMitigation `json:"mitigations,omitempty"`
+}
+
+// OutputMitigation is a mitigation note associated with a finding.
+type OutputMitigation struct {
+	Action        string `json:"action,omitempty"`
+	Comment       string `json:"comment,omitempty"`
+	Created       string `json:"created,omitempty"`
+	RemainingRisk string `json:"remaining_risk,omitempty"`
+	Specifics     string `json:"specifics,omitempty"`
+	Technique     string `json:"technique,omitempty"`
+	UserName      string `json:"user_name,omitempty"`
+	Verification  string `json:"verification,omitempty"`
 }
 
 // Output is the JSON envelope written to stdout.
@@ -552,11 +574,6 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 	}
 	if p.CvssGte != nil {
 		params.Set("cvss_gte", fmt.Sprintf("%.1f", *p.CvssGte))
-	}
-	if len(p.Status) > 0 {
-		for _, s := range p.Status {
-			params.Add("finding_status", strings.TrimSpace(s))
-		}
 	}
 	if len(p.CWEIDs) > 0 {
 		params.Set("cwe", strings.Join(p.CWEIDs, ","))
@@ -601,6 +618,19 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 	findings := make([]OutputFinding, 0, len(page.Embedded.Findings))
 	for _, f := range page.Embedded.Findings {
 		d := f.FindingDetails
+		mitigations := make([]OutputMitigation, 0, len(f.Annotations))
+		for _, a := range f.Annotations {
+			mitigations = append(mitigations, OutputMitigation{
+				Action:        a.Action,
+				Comment:       strings.TrimSpace(a.Comment),
+				Created:       a.Created,
+				RemainingRisk: strings.TrimSpace(a.RemainingRisk),
+				Specifics:     strings.TrimSpace(a.Specifics),
+				Technique:     strings.TrimSpace(a.Technique),
+				UserName:      a.UserName,
+				Verification:  strings.TrimSpace(a.Verification),
+			})
+		}
 		out := OutputFinding{
 			IssueID:        f.IssueID,
 			ScanType:       f.ScanType,
@@ -625,6 +655,7 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 			Version:        d.Version,
 			CVE:            d.CVEID,
 			CVSS:           d.CVSS,
+			Mitigations:    mitigations,
 		}
 		findings = append(findings, out)
 	}
