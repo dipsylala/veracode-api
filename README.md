@@ -96,6 +96,7 @@ veracode-api <domain> [flags]
 | --- | --- | --- |
 | `--app string` | | Application profile name |
 | `--workspace-root dir` | cwd | Directory containing `.veracode-workspace.json` |
+| `--format string` | json | Output format: `json` or `markdown` |
 
 ### Apps flags (`apps`)
 
@@ -103,12 +104,16 @@ veracode-api <domain> [flags]
 | --- | --- | --- |
 | `--page int` | 0 | Page number |
 | `--size int` | 100 | Page size |
+| `--format string` | json | Output format: `json` or `markdown` |
 
 ### Findings flags (`static`, `dynamic`, `sca`)
 
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--severity int` | | Exact severity filter (0 = informational … 5 = very high) |
+| `--severity-gte int` | | Minimum severity filter (inclusive) |
+| `--cvss float` | | Exact CVSS score filter (0-10) |
+| `--cvss-gte float` | | Minimum CVSS score filter (inclusive) |
 | `--status string` | | Comma-separated statuses: `NEW`, `OPEN`, `FIXED`, `MITIGATED` |
 | `--cwe-ids string` | | Comma-separated CWE IDs |
 | `--violates-policy` | false | Only policy-violating findings |
@@ -134,8 +139,6 @@ veracode-api <domain> [flags]
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--severity-gte int` | | Minimum severity (inclusive) |
-| `--cvss-gte float` | | Minimum CVSS score (inclusive) |
 | `--only-exploitable` | false | Only exploitable vulnerabilities |
 | `--only-new` | false | Only new findings |
 
@@ -191,7 +194,7 @@ veracode-api scaninfo --app "MyApp" --build-id 12345678
 
 ## Output
 
-All commands write a JSON object to stdout and exit 0 on success, or print an error to stderr and exit 1.
+All commands write JSON to stdout by default. Pass `--format markdown` to render markdown instead. Commands exit 0 on success, or print an error to stderr and exit 1.
 
 **Findings list** (`static`, `dynamic`, `sca`):
 
@@ -209,7 +212,6 @@ All commands write a JSON object to stdout and exit 0 on success, or print an er
       "scan_type": "STATIC",
       "severity": 4,
       "cwe_id": 89,
-      "cwe_name": "Improper Neutralization of Special Elements used in an SQL Command",
       "status": "OPEN",
       "resolution": "",
       "violates_policy": true,

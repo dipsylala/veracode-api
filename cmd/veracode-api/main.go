@@ -25,9 +25,13 @@ Application flags (static, dynamic, sca, appinfo, sandboxes, scaninfo):
   --app string           Application profile name
                          (falls back to .veracode-workspace.json in --workspace-root)
   --workspace-root dir   Directory to search for .veracode-workspace.json (default: cwd)
+  --format string        Output format: json or markdown (default json)
 
 Findings only:
-  --severity int         Exact severity filter (0-5)
+  --severity int         Exact severity (0-5)
+  --severity-gte int     Minimum severity (>= value)
+  --cvss float           Exact CVSS score (0-10)
+  --cvss-gte float       Minimum CVSS score (>= value, 0-10)
   --status string        Comma-separated finding statuses (NEW,OPEN,FIXED,MITIGATED)
   --cwe-ids string       Comma-separated CWE IDs
   --violates-policy      Only show policy-violating findings
@@ -46,8 +50,6 @@ Dynamic only:
   --exclude-mitigations  Exclude mitigation annotation details
 
 SCA only:
-  --severity-gte int     Minimum severity (>= value)
-  --cvss-gte float       Minimum CVSS score
   --only-exploitable     Only exploitable vulnerabilities
   --only-new             Only new findings
 

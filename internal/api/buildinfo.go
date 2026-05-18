@@ -114,12 +114,7 @@ func (c *Client) GetBuildInfo(ctx context.Context, appName string, appID, buildI
 
 	units := make([]AnalysisUnitOutput, 0, len(raw.Build.AnalysisUnits))
 	for _, u := range raw.Build.AnalysisUnits {
-		units = append(units, AnalysisUnitOutput{
-			AnalysisType:  u.AnalysisType,
-			Status:        u.Status,
-			EngineVersion: u.EngineVersion,
-			ScanType:      u.ScanType,
-		})
+		units = append(units, AnalysisUnitOutput(u))
 	}
 
 	return &BuildInfoOutput{

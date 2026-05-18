@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -385,11 +387,52 @@ func (c *Client) GetSandboxList(ctx context.Context, appGUID, appName string) (*
 // Findings
 // ---------------------------------------------------------------------------
 
+var reHTMLTag = regexp.MustCompile(`<[^>]+>`)
+
+// stripHTML removes HTML tags and entities from s, and truncates at "References:".
+func stripHTML(s string) string {
+	s = reHTMLTag.ReplaceAllString(s, "")
+	s = html.UnescapeString(s)
+	if i := strings.Index(s, "References:"); i >= 0 {
+		s = s[:i]
+	}
+	return strings.TrimSpace(strings.Join(strings.Fields(s), " "))
+}
+
+func normalizeFindingText(s string) string {
+	s = strings.ToLower(stripHTML(s))
+	return strings.Trim(strings.Join(strings.Fields(s), " "), " .:-")
+}
+
+func outputAttackVector(scanType string, f rawFinding) string {
+	attackVector := strings.TrimSpace(f.FindingDetails.AttackVector)
+	if attackVector == "" {
+		return ""
+	}
+	if !strings.EqualFold(scanType, "DYNAMIC") {
+		return attackVector
+	}
+
+	normalized := normalizeFindingText(attackVector)
+	redundantWith := []string{
+		f.FindingDetails.CWE.Name,
+		f.FindingDetails.Title,
+		f.Description,
+	}
+	for _, candidate := range redundantWith {
+		if normalized != "" && normalized == normalizeFindingText(candidate) {
+			return ""
+		}
+	}
+	return attackVector
+}
+
 // FindingsParams holds all supported filter parameters.
 type FindingsParams struct {
 	ScanType           string
 	Severity           *int
 	SeverityGte        *int
+	Cvss               *float64
 	CvssGte            *float64
 	Status             []string
 	CWEIDs             []string
@@ -458,7 +501,6 @@ type OutputFinding struct {
 	ScanType       string  `json:"scan_type"`
 	Severity       int     `json:"severity"`
 	CWEID          int     `json:"cwe_id,omitempty"`
-	CWEName        string  `json:"cwe_name,omitempty"`
 	Status         string  `json:"status"`
 	Resolution     string  `json:"resolution,omitempty"`
 	ViolatesPolicy bool    `json:"violates_policy"`
@@ -504,6 +546,9 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 	}
 	if p.SeverityGte != nil {
 		params.Set("severity_gte", fmt.Sprintf("%d", *p.SeverityGte))
+	}
+	if p.Cvss != nil {
+		params.Set("cvss", fmt.Sprintf("%.1f", *p.Cvss))
 	}
 	if p.CvssGte != nil {
 		params.Set("cvss_gte", fmt.Sprintf("%.1f", *p.CvssGte))
@@ -561,21 +606,20 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 			ScanType:       f.ScanType,
 			Severity:       d.Severity,
 			CWEID:          d.CWE.ID,
-			CWEName:        d.CWE.Name,
 			Status:         f.FindingStatus.Status,
 			Resolution:     f.FindingStatus.Resolution,
 			ViolatesPolicy: f.ViolatesPolicy,
 			IsNew:          f.FindingStatus.New,
 			FirstFoundDate: f.FindingStatus.FirstFoundDate,
 			LastSeenDate:   f.FindingStatus.LastSeenDate,
-			Description:    f.Description,
+			Description:    stripHTML(f.Description),
 			Title:          d.Title,
 			FilePath:       d.FilePath,
 			FileName:       d.FileName,
 			LineNumber:     d.FileLineNumber,
 			Module:         d.Module,
 			Exploitability: d.Exploitability,
-			AttackVector:   d.AttackVector,
+			AttackVector:   outputAttackVector(p.ScanType, f),
 			URL:            d.URL,
 			Component:      d.ComponentFilename,
 			Version:        d.Version,
