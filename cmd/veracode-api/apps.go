@@ -17,7 +17,8 @@ type appsOutput struct{ *api.ApplicationListOutput }
 func (a *appsOutput) WriteMarkdown(w io.Writer) error {
 	out := a.ApplicationListOutput
 	fmt.Fprintf(w, "# Applications\n\n")
-	fmt.Fprintf(w, "**Total:** %d | **Page:** %d | **Size:** %d\n\n", out.TotalApplications, out.Page, out.Size)
+	meta := findingsMetadata(int64(out.TotalApplications), out.Page, out.Size, 0)
+	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Applications) == 0 {
 		fmt.Fprintln(w, "_No applications._")
 		return nil
