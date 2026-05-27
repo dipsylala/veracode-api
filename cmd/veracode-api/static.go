@@ -16,10 +16,7 @@ type staticOutput struct{ *api.Output }
 func (s *staticOutput) WriteMarkdown(w io.Writer) error {
 	out := s.Output
 	fmt.Fprintf(w, "# %s — STATIC findings\n\n", out.App)
-	meta := fmt.Sprintf("**Total:** %d | **Page:** %d | **Size:** %d", out.TotalCount, out.Page, out.Size)
-	if out.BuildID != 0 {
-		meta += fmt.Sprintf(" | **Build:** %d", out.BuildID)
-	}
+	meta := findingsMetadata(out.TotalCount, out.Page, out.Size, out.BuildID)
 	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Findings) == 0 {
 		fmt.Fprintln(w, "_No findings._")
@@ -32,6 +29,8 @@ func (s *staticOutput) WriteMarkdown(w io.Writer) error {
 			f.IssueID, f.Severity, f.CWEID, f.Status, policyMark(f.ViolatesPolicy),
 			f.FileName, f.LineNumber, f.AttackVector)
 	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "## Detailed Findings")
 	fmt.Fprintln(w)
 	for _, f := range out.Findings {
 		fmt.Fprintf(w, "### Finding %d · severity %d · CWE-%d\n", f.IssueID, f.Severity, f.CWEID)

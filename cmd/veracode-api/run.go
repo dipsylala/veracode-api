@@ -80,6 +80,20 @@ func policyMark(v bool) string {
 	return ""
 }
 
+// findingsMetadata builds a metadata line for findings output.
+// Includes total count always, page/size only when paginating, and build ID if present.
+func findingsMetadata(total int64, page, size, buildID int) string {
+	meta := fmt.Sprintf("**Total:** %d", total)
+	// Only include pagination info when there's actual pagination
+	if size > 0 && int64(size) < total {
+		meta += fmt.Sprintf(" | **Page:** %d | **Size:** %d", page, size)
+	}
+	if buildID != 0 {
+		meta += fmt.Sprintf(" | **Build:** %d", buildID)
+	}
+	return meta
+}
+
 // printFlagDefaults writes flag usage to stderr (used by subcommands).
 func printFlagDefaults(fs *flag.FlagSet) {
 	fmt.Fprintf(os.Stderr, "\nFlags:\n")

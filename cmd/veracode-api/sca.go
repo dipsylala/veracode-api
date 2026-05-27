@@ -16,7 +16,8 @@ type scaOutput struct{ *api.Output }
 func (s *scaOutput) WriteMarkdown(w io.Writer) error {
 	out := s.Output
 	fmt.Fprintf(w, "# %s — SCA findings\n\n", out.App)
-	fmt.Fprintf(w, "**Total:** %d | **Page:** %d | **Size:** %d\n\n", out.TotalCount, out.Page, out.Size)
+	meta := findingsMetadata(out.TotalCount, out.Page, out.Size, 0)
+	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Findings) == 0 {
 		fmt.Fprintln(w, "_No findings._")
 		return nil
@@ -32,6 +33,8 @@ func (s *scaOutput) WriteMarkdown(w io.Writer) error {
 			f.Severity, cvss, f.CVE, f.Component, f.Version,
 			f.Status, policyMark(f.ViolatesPolicy))
 	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "## Detailed Findings")
 	fmt.Fprintln(w)
 	for _, f := range out.Findings {
 		heading := fmt.Sprintf("### severity %d", f.Severity)
