@@ -24,6 +24,7 @@ type findingsFlags struct {
 	cweIDs         string
 	violatesPolicy bool
 	onlyNew        bool
+	allResults     bool
 	page           int
 	size           int
 	format         string
@@ -41,6 +42,7 @@ func parseFindings(fs *flag.FlagSet, args []string) (findingsFlags, error) {
 	fs.StringVar(&f.cweIDs, "cwe-ids", "", "Comma-separated CWE IDs")
 	fs.BoolVar(&f.violatesPolicy, "violates-policy", false, "Only policy-violating findings")
 	fs.BoolVar(&f.onlyNew, "only-new", false, "Only findings that are new in the current context")
+	fs.BoolVar(&f.allResults, "all-results", false, "Fetch all pages, ignoring --page and --size")
 	fs.IntVar(&f.page, "page", 0, "Page number")
 	fs.IntVar(&f.size, "size", 100, "Page size")
 	fs.StringVar(&f.format, "format", "json", "Output format: json or markdown")
@@ -78,7 +80,7 @@ func parseFindings(fs *flag.FlagSet, args []string) (findingsFlags, error) {
 	if f.page < 0 {
 		return f, fmt.Errorf("--page must be >= 0")
 	}
-	if f.size <= 0 {
+	if !f.allResults && f.size <= 0 {
 		return f, fmt.Errorf("--size must be > 0")
 	}
 	return f, nil

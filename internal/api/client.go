@@ -163,6 +163,8 @@ type SandboxInfo struct {
 type SandboxListOutput struct {
 	Success        bool          `json:"success"`
 	App            string        `json:"app"`
+	Page           int           `json:"page"`
+	Size           int           `json:"size"`
 	TotalSandboxes int           `json:"total_sandboxes"`
 	Sandboxes      []SandboxInfo `json:"sandboxes"`
 }
@@ -179,6 +181,11 @@ type sandboxListResponse struct {
 			} `json:"profile"`
 		} `json:"sandboxes"`
 	} `json:"_embedded"`
+	Page struct {
+		TotalElements int `json:"total_elements"`
+		Number        int `json:"number"`
+		Size          int `json:"size"`
+	} `json:"page"`
 }
 
 // GetAppInfo resolves an application name to its GUID and numeric ID.
@@ -223,7 +230,29 @@ func (c *Client) GetAppGUID(ctx context.Context, name string) (string, error) {
 	return info.GUID, nil
 }
 
-// GetApplications returns a page of visible application profiles.
+// GetAllApplications fetches every page of application profiles and combines them.
+func (c *Client) GetAllApplications(ctx context.Context) (*ApplicationListOutput, error) {
+	const batchSize = 500
+	out, err := c.GetApplications(ctx, 0, batchSize)
+	if err != nil {
+		return nil, err
+	}
+	for pageNum := 1; len(out.Applications) < out.TotalApplications; pageNum++ {
+		next, err := c.GetApplications(ctx, pageNum, batchSize)
+		if err != nil {
+			return nil, err
+		}
+		if len(next.Applications) == 0 {
+			break
+		}
+		out.Applications = append(out.Applications, next.Applications...)
+	}
+	out.Page = 0
+	out.Size = len(out.Applications)
+	return out, nil
+}
+
+// GetApplications returns a single page of visible application profiles.
 func (c *Client) GetApplications(ctx context.Context, page, size int) (*ApplicationListOutput, error) {
 	params := url.Values{}
 	params.Set("page", fmt.Sprintf("%d", page))
@@ -296,9 +325,35 @@ func (c *Client) GetApplicationDetails(ctx context.Context, appGUID, appName str
 	}, nil
 }
 
-// GetSandboxes returns the sandboxes for an application profile.
-func (c *Client) GetSandboxes(ctx context.Context, appGUID string) ([]SandboxInfo, error) {
-	body, err := c.get(ctx, fmt.Sprintf("/appsec/v1/applications/%s/sandboxes", appGUID), nil)
+// GetAllSandboxes fetches every page of sandboxes for an application profile.
+func (c *Client) GetAllSandboxes(ctx context.Context, appGUID, appName string) (*SandboxListOutput, error) {
+	const batchSize = 500
+	out, err := c.GetSandboxes(ctx, appGUID, appName, 0, batchSize)
+	if err != nil {
+		return nil, err
+	}
+	for pageNum := 1; len(out.Sandboxes) < out.TotalSandboxes; pageNum++ {
+		next, err := c.GetSandboxes(ctx, appGUID, appName, pageNum, batchSize)
+		if err != nil {
+			return nil, err
+		}
+		if len(next.Sandboxes) == 0 {
+			break
+		}
+		out.Sandboxes = append(out.Sandboxes, next.Sandboxes...)
+	}
+	out.Page = 0
+	out.Size = len(out.Sandboxes)
+	return out, nil
+}
+
+// GetSandboxes returns a single page of sandboxes for an application profile.
+func (c *Client) GetSandboxes(ctx context.Context, appGUID, appName string, page, size int) (*SandboxListOutput, error) {
+	params := url.Values{}
+	params.Set("page", fmt.Sprintf("%d", page))
+	params.Set("size", fmt.Sprintf("%d", size))
+
+	body, err := c.get(ctx, fmt.Sprintf("/appsec/v1/applications/%s/sandboxes", appGUID), params)
 	if err != nil {
 		return nil, fmt.Errorf("sandbox lookup: %w", err)
 	}
@@ -317,7 +372,6 @@ func (c *Client) GetSandboxes(ctx context.Context, appGUID string) ([]SandboxInf
 		if name == "" {
 			name = sandbox.Profile.Name
 		}
-
 		sandboxes = append(sandboxes, SandboxInfo{
 			GUID: sandbox.GUID,
 			ID:   sandbox.ID,
@@ -325,7 +379,14 @@ func (c *Client) GetSandboxes(ctx context.Context, appGUID string) ([]SandboxInf
 		})
 	}
 
-	return sandboxes, nil
+	return &SandboxListOutput{
+		Success:        true,
+		App:            appName,
+		Page:           resp.Page.Number,
+		Size:           resp.Page.Size,
+		TotalSandboxes: resp.Page.TotalElements,
+		Sandboxes:      sandboxes,
+	}, nil
 }
 
 // ResolveSandboxGUID accepts either a sandbox GUID or a sandbox name.
@@ -343,19 +404,19 @@ func (c *Client) ResolveSandboxInfo(ctx context.Context, appGUID, sandbox string
 		return SandboxInfo{}, nil
 	}
 
-	sandboxes, err := c.GetSandboxes(ctx, appGUID)
+	out, err := c.GetAllSandboxes(ctx, appGUID, "")
 	if err != nil {
 		return SandboxInfo{}, err
 	}
 
-	for _, candidate := range sandboxes {
+	for _, candidate := range out.Sandboxes {
 		if strings.EqualFold(candidate.GUID, sandbox) || strings.EqualFold(candidate.Name, sandbox) {
 			return candidate, nil
 		}
 	}
 
-	available := make([]string, 0, len(sandboxes))
-	for _, candidate := range sandboxes {
+	available := make([]string, 0, len(out.Sandboxes))
+	for _, candidate := range out.Sandboxes {
 		if candidate.Name != "" {
 			available = append(available, candidate.Name)
 		}
@@ -366,21 +427,6 @@ func (c *Client) ResolveSandboxInfo(ctx context.Context, appGUID, sandbox string
 	}
 
 	return SandboxInfo{}, fmt.Errorf("sandbox not found: %s (available: %s)", sandbox, strings.Join(available, ", "))
-}
-
-// GetSandboxList returns the sandbox list in CLI output format.
-func (c *Client) GetSandboxList(ctx context.Context, appGUID, appName string) (*SandboxListOutput, error) {
-	sandboxes, err := c.GetSandboxes(ctx, appGUID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SandboxListOutput{
-		Success:        true,
-		App:            appName,
-		TotalSandboxes: len(sandboxes),
-		Sandboxes:      sandboxes,
-	}, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -556,8 +602,8 @@ type Output struct {
 	Findings   []OutputFinding `json:"findings"`
 }
 
-// GetFindings fetches findings for an application and returns structured output.
-func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p FindingsParams) (*Output, error) {
+// fetchFindingsPage fetches a single page of findings with no auto-pagination.
+func (c *Client) fetchFindingsPage(ctx context.Context, appGUID, appName string, p FindingsParams) (*Output, error) {
 	params := url.Values{}
 	params.Set("scan_type", p.ScanType)
 	params.Set("page", fmt.Sprintf("%d", p.Page))
@@ -670,4 +716,34 @@ func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p Fin
 		Size:       page.Page.Size,
 		Findings:   findings,
 	}, nil
+}
+
+// GetAllFindings fetches every page of findings by calling fetchFindingsPage
+// in a loop and combining the results.
+func (c *Client) GetAllFindings(ctx context.Context, appGUID, appName string, p FindingsParams) (*Output, error) {
+	const batchSize = 500
+	p.Page = 0
+	p.Size = batchSize
+	out, err := c.fetchFindingsPage(ctx, appGUID, appName, p)
+	if err != nil {
+		return nil, err
+	}
+	for p.Page = 1; int64(len(out.Findings)) < out.TotalCount; p.Page++ {
+		next, err := c.fetchFindingsPage(ctx, appGUID, appName, p)
+		if err != nil {
+			return nil, err
+		}
+		if len(next.Findings) == 0 {
+			break
+		}
+		out.Findings = append(out.Findings, next.Findings...)
+	}
+	out.Page = 0
+	out.Size = len(out.Findings)
+	return out, nil
+}
+
+// GetFindings fetches a single page of findings for an application.
+func (c *Client) GetFindings(ctx context.Context, appGUID, appName string, p FindingsParams) (*Output, error) {
+	return c.fetchFindingsPage(ctx, appGUID, appName, p)
 }
