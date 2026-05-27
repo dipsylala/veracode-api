@@ -16,7 +16,7 @@ type dynamicOutput struct{ *api.Output }
 func (d *dynamicOutput) WriteMarkdown(w io.Writer) error {
 	out := d.Output
 	fmt.Fprintf(w, "# %s — DYNAMIC findings\n\n", out.App)
-	meta := findingsMetadata(out.TotalCount, out.Page, out.Size, out.BuildID)
+	meta := paginatedMetadata(out.TotalCount, out.Page, out.Size, out.BuildID)
 	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Findings) == 0 {
 		fmt.Fprintln(w, "_No findings._")

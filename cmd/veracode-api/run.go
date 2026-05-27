@@ -80,9 +80,9 @@ func policyMark(v bool) string {
 	return ""
 }
 
-// findingsMetadata builds a metadata line for findings output.
+// paginatedMetadata builds a metadata line for paginated resource outputs.
 // Includes total count always, page/size only when paginating, and build ID if present.
-func findingsMetadata(total int64, page, size, buildID int) string {
+func paginatedMetadata(total int64, page, size, buildID int) string {
 	meta := fmt.Sprintf("**Total:** %d", total)
 	// Only include pagination info when there's actual pagination
 	if size > 0 && int64(size) < total {

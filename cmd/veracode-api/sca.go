@@ -16,7 +16,7 @@ type scaOutput struct{ *api.Output }
 func (s *scaOutput) WriteMarkdown(w io.Writer) error {
 	out := s.Output
 	fmt.Fprintf(w, "# %s — SCA findings\n\n", out.App)
-	meta := findingsMetadata(out.TotalCount, out.Page, out.Size, 0)
+	meta := paginatedMetadata(out.TotalCount, out.Page, out.Size, 0)
 	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Findings) == 0 {
 		fmt.Fprintln(w, "_No findings._")

@@ -16,7 +16,7 @@ type staticOutput struct{ *api.Output }
 func (s *staticOutput) WriteMarkdown(w io.Writer) error {
 	out := s.Output
 	fmt.Fprintf(w, "# %s — STATIC findings\n\n", out.App)
-	meta := findingsMetadata(out.TotalCount, out.Page, out.Size, out.BuildID)
+	meta := paginatedMetadata(out.TotalCount, out.Page, out.Size, out.BuildID)
 	fmt.Fprintf(w, "%s\n\n", meta)
 	if len(out.Findings) == 0 {
 		fmt.Fprintln(w, "_No findings._")
