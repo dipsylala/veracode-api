@@ -41,6 +41,8 @@ func runApps(args []string) error {
 	var page int
 	var size int
 
+	var allResults bool
+	fs.BoolVar(&allResults, "all-results", false, "Fetch all pages, ignoring --page and --size")
 	fs.IntVar(&page, "page", 0, "Page number")
 	fs.IntVar(&size, "size", 100, "Page size")
 	var format string
@@ -56,7 +58,7 @@ func runApps(args []string) error {
 		printFlagDefaults(fs)
 		return fmt.Errorf("--page must be >= 0")
 	}
-	if size <= 0 {
+	if !allResults && size <= 0 {
 		fmt.Fprintf(os.Stderr, "veracode-api apps: --size must be > 0\n")
 		printFlagDefaults(fs)
 		return fmt.Errorf("--size must be > 0")
@@ -70,7 +72,12 @@ func runApps(args []string) error {
 	client := api.NewClient(apiID, apiKey, baseURL)
 	ctx := context.Background()
 
-	out, err := client.GetApplications(ctx, page, size)
+	var out *api.ApplicationListOutput
+	if allResults {
+		out, err = client.GetAllApplications(ctx)
+	} else {
+		out, err = client.GetApplications(ctx, page, size)
+	}
 	if err != nil {
 		return err
 	}

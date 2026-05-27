@@ -146,3 +146,24 @@ Each command's `run*` function wraps the result in its own output type
 (e.g. `staticOutput`, `dynamicOutput`, `scaOutput`) and calls `run()` directly.
 Markdown rendering is implemented in `WriteMarkdown` on each type, in its
 own file — `static.go`, `dynamic.go`, `sca.go`.
+
+## API endpoints in use
+
+### REST API (`api.veracode.com`)
+
+| Endpoint | Method | Used by |
+| --- | --- | --- |
+| `/appsec/v1/applications` | GET | `GetAppInfo` (name lookup), `GetApplications` / `GetAllApplications` |
+| `/appsec/v1/applications/{guid}` | GET | `GetApplicationDetails` |
+| `/appsec/v1/applications/{guid}/sandboxes` | GET | `GetSandboxes` / `GetAllSandboxes` |
+| `/appsec/v2/applications/{guid}/findings` | GET | `GetFindings` / `GetAllFindings` |
+| `/appsec/v2/applications/{guid}/findings/{issue_id}/static_flaw_info` | GET | `GetStaticFlawDetail` |
+| `/appsec/v2/applications/{guid}/findings/{issue_id}/dynamic_flaw_info` | GET | `GetDynamicFlawDetail` |
+
+### XML API (`analysiscenter.veracode.com`)
+
+| Endpoint | Method | Used by |
+| --- | --- | --- |
+| `/api/5.0/getbuildinfo.do` | GET | `GetBuildInfo` (`scaninfo` domain) |
+
+The XML host is derived at runtime by replacing `//api.` with `//analysiscenter.` in the configured base URL.
