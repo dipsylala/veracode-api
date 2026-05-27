@@ -104,14 +104,24 @@ veracode-api <domain> [flags]
 
 | Flag | Default | Description |
 | --- | --- | --- |
+| `--all-results` | false | Fetch all pages (overrides `--page` and `--size`) |
 | `--page int` | 0 | Page number |
 | `--size int` | 100 | Page size |
 | `--format string` | json | Output format: `json` or `markdown` |
+
+### Sandboxes flags (`sandboxes`)
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--all-results` | false | Fetch all pages (overrides `--page` and `--size`) |
+| `--page int` | 0 | Page number |
+| `--size int` | 50 | Page size |
 
 ### Findings flags (`static`, `dynamic`, `sca`)
 
 | Flag | Default | Description |
 | --- | --- | --- |
+| `--all-results` | false | Fetch all pages (overrides `--page` and `--size`) |
 | `--severity int` | | Exact severity filter (0 = informational … 5 = very high) |
 | `--severity-gte int` | | Minimum severity filter (inclusive) |
 | `--cvss float` | | Exact CVSS score filter (0-10) |

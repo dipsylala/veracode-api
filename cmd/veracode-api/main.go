@@ -35,12 +35,19 @@ Findings only:
   --cwe-ids string       Comma-separated CWE IDs
   --violates-policy      Only show policy-violating findings
   --only-new             Only findings that are new in the current context
+  --all-results          Fetch all pages (overrides --page and --size)
   --page int             Page number (default 0)
   --size int             Page size (default 100)
 
 Apps only:
+  --all-results          Fetch all pages (overrides --page and --size)
   --page int             Page number (default 0)
   --size int             Page size (default 100)
+
+Sandboxes only:
+  --all-results          Fetch all pages (overrides --page and --size)
+  --page int             Page number (default 0)
+  --size int             Page size (default 50)
 
 Static only:
   --sandbox string       Sandbox name or GUID

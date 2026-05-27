@@ -77,7 +77,11 @@ func runSCA(args []string) error {
 	p.OnlyExploitable = onlyExploitable
 
 	return run(findings.format, findings.app, findings.workspaceRoot, func(ctx context.Context, c *api.Client, appGUID, appName string) (Renderer, error) {
-		out, err := c.GetFindings(ctx, appGUID, appName, p)
+		fetch := c.GetFindings
+		if findings.allResults {
+			fetch = c.GetAllFindings
+		}
+		out, err := fetch(ctx, appGUID, appName, p)
 		if err != nil {
 			return nil, err
 		}
