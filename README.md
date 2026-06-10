@@ -209,6 +209,8 @@ All commands write JSON to stdout by default. Pass `--format markdown` to render
 
 Static and dynamic findings omit mitigation details by default. Pass `--include-mitigations` to request and render mitigation details when the API returns them.
 
+### JSON format
+
 **Findings list** (`static`, `dynamic`, `sca`):
 
 ```json
@@ -379,6 +381,68 @@ Static and dynamic findings omit mitigation details by default. Pass `--include-
   "http_response": "200 OK\r\n..."
 }
 ```
+
+### Markdown format examples
+
+Applications (apps):
+
+```markdown
+# Applications
+
+**Total:** 470 | **Page:** 0 | **Size:** 5
+
+| Name | ID | GUID |
+|:--|--:|:--|
+| Metamail | 103413 | 22222222-2222-2222-2222-222222222222 |
+| Roller | 223499 | 22222222-2222-2222-2222-222222222222 |
+| Lunar Lander | 223665 | 22222222-2222-2222-2222-222222222222 |
+| iOS Traveler | 212416 | 22222222-2222-2222-2222-222222222222 |
+| BlogEngine.NET | 222317 | 22222222-2222-2222-2222-222222222222 |
+```
+
+**Findings list** (`static`):
+
+```markdown
+# verademo — STATIC findings
+
+**Total:** 172 | **Page:** 0 | **Size:** 5 | **Build:** 29079161
+
+| ID | Sev | CWE | Status | Policy | File | Line | Attack Vector |
+|:--|:--|:--|:--|:--|:--|--:|:--|
+| 1 | 3 | 80 | OPEN | ✓ | profile.jsp | 247 | jQueryResult.attr |
+| 2 | 3 | 80 | OPEN | ✓ | profile.jsp | 252 | jQueryResult.append |
+| 3 | 3 | 80 | OPEN | ✓ | feed.jsp | 174 | jQueryResult.append |
+| 177 | 5 | 78 | OPEN | ✓ | ToolsController.java | 1 | java.lang.Runtime.exec |
+| 178 | 5 | 78 | OPEN | ✓ | ToolsController.java | 1 | java.lang.Runtime.exec |
+
+## Detailed Findings
+
+### Finding 1 · severity 3 · CWE-80
+**Location:** WEB-INF/views/profile.jsp:247
+**Module:** VeRaDemo.war_htmljscode.veracodegen.htmla.jsa  
+**Attack vector:** jQueryResult.attr  
+
+### Finding 2 · severity 3 · CWE-80
+**Location:** WEB-INF/views/profile.jsp:252
+**Module:** VeRaDemo.war_htmljscode.veracodegen.htmla.jsa  
+**Attack vector:** jQueryResult.append  
+
+### Finding 3 · severity 3 · CWE-80
+**Location:** WEB-INF/views/feed.jsp:174
+**Module:** VeRaDemo.war_htmljscode.veracodegen.htmla.jsa  
+**Attack vector:** jQueryResult.append  
+
+### Finding 177 · severity 5 · CWE-78
+**Location:** com/veracode/verademo/controller/WEB-INF/classes/com/veracode/verademo/controller/ToolsController.java:1
+**Module:** VeRaDemo.war  
+**Attack vector:** java.lang.Runtime.exec  
+
+### Finding 178 · severity 5 · CWE-78
+**Location:** com/veracode/verademo/controller/WEB-INF/classes/com/veracode/verademo/controller/ToolsController.java:1
+**Module:** VeRaDemo.war  
+**Attack vector:** java.lang.Runtime.exec  
+```
+
 
 ## Severity scale
 
