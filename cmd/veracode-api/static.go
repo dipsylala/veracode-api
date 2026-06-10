@@ -35,9 +35,9 @@ func (s *staticOutput) WriteMarkdown(w io.Writer) error {
 	for _, f := range out.Findings {
 		fmt.Fprintf(w, "### Finding %d · severity %d · CWE-%d\n", f.IssueID, f.Severity, f.CWEID)
 		if f.FilePath != "" {
-			fmt.Fprintf(w, "**Location:** %s:%d", f.FilePath, f.LineNumber)
+			fmt.Fprintf(w, "**Location:** %s:%d\n", f.FilePath, f.LineNumber)
 			if f.Module != "" {
-				fmt.Fprintf(w, " · **Module:** %s", f.Module)
+				fmt.Fprintf(w, "**Module:** %s", f.Module)
 			}
 			fmt.Fprintln(w, "  ")
 		}
